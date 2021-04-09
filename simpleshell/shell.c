@@ -19,22 +19,19 @@
  * For example,  for "ls > tmp",  return the position of ">"
  * For example,  for "ls | wc ",  return the position of "|"
  */
-char* parse(char * lineptr, char **args)
+char *parse(char *lineptr, char **args)
 {
-  //while lineIn isn't done. 
-  while (*lineptr != '\0') 
+  //while lineIn isn't done.
+  while (*lineptr != '\0')
   {
     // If it's whitespace, tab or newline,
     // turn it into \0 and keep moving till we find the next token.
     // This makes sure each arg has a \0 immidiately after it
-    // without needing to copy parts of lineIn to new strings. 
-    while (!(isdigit(*lineptr) || isalpha(*lineptr) || *lineptr == '-'
-        || *lineptr == '.' || *lineptr == '\"'|| *lineptr == '/'
-        || *lineptr == '_'))
-    {   
+    // without needing to copy parts of lineIn to new strings.
+    while (!(isdigit(*lineptr) || isalpha(*lineptr) || *lineptr == '-' || *lineptr == '.' || *lineptr == '\"' || *lineptr == '/' || *lineptr == '_'))
+    {
       //break out if we reach an "end"
-      if(*lineptr == '\0' || *lineptr == '<' || *lineptr == '>'
-          || *lineptr == '|' || *lineptr == '&')
+      if (*lineptr == '\0' || *lineptr == '<' || *lineptr == '>' || *lineptr == '|' || *lineptr == '&')
         break;
 
       *lineptr = '\0';
@@ -42,27 +39,23 @@ char* parse(char * lineptr, char **args)
     }
 
     //break out of the 2nd while loop if we reach an "end".
-    if(*lineptr == '\0' || *lineptr == '<' || *lineptr == '>'
-        || *lineptr == '|' || *lineptr == '&' )
+    if (*lineptr == '\0' || *lineptr == '<' || *lineptr == '>' || *lineptr == '|' || *lineptr == '&')
       break;
 
     //mark we've found a new arg
-    *args = lineptr;    
+    *args = lineptr;
     args++;
 
     // keep moving till the argument ends. Once we reach a termination symbol,
     // the arg has ended, so go back to the start of the loop.
-    while (isdigit(*lineptr) || isalpha(*lineptr) || *lineptr == '-'
-        || *lineptr == '.' || *lineptr == '\"'|| *lineptr == '/'
-        || *lineptr == '_')
+    while (isdigit(*lineptr) || isalpha(*lineptr) || *lineptr == '-' || *lineptr == '.' || *lineptr == '\"' || *lineptr == '/' || *lineptr == '_')
       lineptr++;
   }
 
-  *args = NULL; 
+  *args = NULL;
 
   return lineptr;
 }
-
 
 /*
  * This function forks a child to execute  a command stored
@@ -70,42 +63,43 @@ char* parse(char * lineptr, char **args)
  * inPipe -- the input stream file descriptor.  For example,  wc < temp 
  * outPipe --the output stream file descriptor.  For example, ls > temp 
  */
-void fchild(char **args,int inPipe, int outPipe)
+void fchild(char **args, int inPipe, int outPipe)
 {
   pid_t pid;
-  
   pid = fork();
-  if (pid == 0)/*Child  process*/
+  if (pid == 0) /*Child  process*/
   {
-    int execReturn=-1;
+    int execReturn = -1;
 
     /*Call dup2 to setup redirection, and then call excevep*/
 
     /*Your solution*/
+    dup2(inPipe, 0);
+    dup2(outPipe, 1);
 
-    if (execReturn < 0) 
-    { 
+    execvp(*args, args);
+
+    if (execReturn < 0)
+    {
       printf("ERROR: exec failed\n");
       exit(1);
     }
-      
-    _exit(0);
 
+    _exit(0);
   }
 
   if (pid < 0)
   {
     printf("ERROR: Failed to fork child process.\n");
-    exit(1); 
+    exit(1);
   }
-  
-  if(inPipe != 0)
+
+  if (inPipe != 0)
     close(inPipe); /*clean up, release file control resource*/
-    
-  if(outPipe != 1)
+
+  if (outPipe != 1)
     close(outPipe); /*clean up, release file control  resource*/
 }
-
 
 /*
  * This function parses and executes a command started from the string position
@@ -118,34 +112,35 @@ void fchild(char **args,int inPipe, int outPipe)
  * out is the output file descriptor, initially it is 1, gradually it may be changed as we parse subcommmands.
  * The inPipe default value  is 0 and  outPipe default value is 1.
  */
-void runcmd(char * linePtr, int length, int inPipe, int outPipe)
+void runcmd(char *linePtr, int length, int inPipe, int outPipe)
 {
-  char * args[length];
-  char * nextChar = parse(linePtr, args);
+  char *args[length];
+  char *nextChar = parse(linePtr, args);
 
   if (args[0] != NULL)
   {
     /*Exit if seeing "exit" command*/
-    /*Your solution*/
-            
-    if (*nextChar == '<' && inPipe == 0) 
+    if (strcmp(args[0], "exit") == 0)
+      exit(0);
+
+    if (*nextChar == '<' && inPipe == 0)
     {
       //It is input redirection, setup the file name to read from
-      char * in[length];
-      
+      char *in[length];
+
       //nextChar+1 moves the character position after <,
       //thus points to a file name
-      nextChar = parse(nextChar+1,in); 
+      nextChar = parse(nextChar + 1, in);
 
-      /* Change inPipe so it follows the redirection */ 
+      /* Change inPipe so it follows the redirection */
       /*Your solutuon*/
-
+      int fd = open(in[0], O_RDONLY, 644);
+      inPipe = fd;
     }
 
     if (*nextChar == '>')
-    {   /*It is output redirection, setup the file name to write*/
-        /*Your solutuon*/
-          
+    { /*It is output redirection, setup the file name to write*/
+      /*Your solutuon*/
     }
 
     if (*nextChar == '|')
@@ -158,46 +153,45 @@ void runcmd(char * linePtr, int length, int inPipe, int outPipe)
       return;
     }
 
-    if (*nextChar == '\0') 
+    if (*nextChar == '\0')
     { /*There is noting special after this subcommand, so we just execute in a regular way*/
-      fchild(args,inPipe,outPipe);
+      fchild(args, inPipe, outPipe);
       return;
     }
 
     //else: some problem, so throw a fit.
-    printf("ERROR: Invalid input: %c\n",*nextChar);
+    printf("ERROR: Invalid input: %c\n", *nextChar);
   }
 }
-
 
 int main(int argc, char *argv[])
 {
   /*Your solution*/
   char lineIn[1024];
 
-  while(1) 
+  while (1)
   {
-    if (fgets(lineIn,1024,stdin) == NULL)
+    if (fgets(lineIn, 1024, stdin) == NULL)
       break;
-              
+
     int len = 0;
     while (lineIn[len] != '\0')
       len++;
-      
+
     /* remove the \n that fgets adds to the end */
-    if (len != 0 && lineIn[len-1] == '\n')
+    if (len != 0 && lineIn[len - 1] == '\n')
     {
-      lineIn[len-1] = '\0';
+      lineIn[len - 1] = '\0';
       len--;
     }
-        
+
     //Run this string of subcommands with 0 as default input stream
     //and 1 as default output stream
-    runcmd(lineIn, len,0,1);
-  
+    runcmd(lineIn, len, 0, 1);
+
     /*Wait for the child completes */
     /*Your solution*/
-
+    wait(NULL);
   }
 
   return 0;
