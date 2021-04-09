@@ -141,6 +141,12 @@ void runcmd(char *linePtr, int length, int inPipe, int outPipe)
     if (*nextChar == '>')
     { /*It is output redirection, setup the file name to write*/
       /*Your solutuon*/
+      char *out[length];
+
+      nextChar = parse(nextChar + 1, out);
+
+      int fd = open(out[0], O_CREAT | O_TRUNC | O_WRONLY, 0644);
+      outPipe = fd;
     }
 
     if (*nextChar == '|')
