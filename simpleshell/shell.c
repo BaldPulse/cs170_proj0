@@ -140,7 +140,7 @@ void runcmd(char *linePtr, int length, int inPipe, int outPipe)
 
     if (*nextChar == '>')
     { /*It is output redirection, setup the file name to write*/
-      /*Your solutuon*/
+      /*Your solution*/
       char *out[length];
 
       nextChar = parse(nextChar + 1, out);
@@ -151,11 +151,17 @@ void runcmd(char *linePtr, int length, int inPipe, int outPipe)
 
     if (*nextChar == '|')
     { /*It is a pipe, setup the input and output descriptors */
+      int fd[2];
+      pipe(fd);
       /*execute the subcommand that has been parsed, but setup the output using this pipe*/
       /*Your solution*/
+      fchild(args, inPipe, fd[1]);
+      //wait(NULL);
       /*execute the remaining subcommands, but setup the input using this pipe*/
       /*Your solution*/
-
+      wait(NULL);
+      nextChar++;
+      runcmd(nextChar, length-(nextChar-linePtr), fd[0], outPipe);
       return;
     }
 
